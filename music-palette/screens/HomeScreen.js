@@ -14,6 +14,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [topArtists, setTopArtists] = useState([]);
+  const [topGenres, setTopGenres] = useState([]);
   const greetingMessage = () => {
     const currentTime = new Date().getHours();
 
@@ -116,6 +117,39 @@ const HomeScreen = () => {
     getTopItems();
   }, [])
   console.log(topArtists);
+
+  useEffect(() => {
+    const getTopGenres = async () => {
+        const accessToken = await AsyncStorage.getItem("token");
+        
+        // Fetch top artists
+        const response = await axios({
+            method: "GET",
+            url: "https://api.spotify.com/v1/me/top/artists?limit=20",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        const artists = response.data.items;
+
+        // Extract and aggregate genres
+        let genreCounts = {};
+        artists.forEach(artist => {
+            artist.genres.forEach(genre => {
+                genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+            });
+        });
+
+        // Convert genreCounts object to array and sort by count
+        const genresSorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).map(entry => entry[0]);
+
+        setTopGenres(genresSorted);
+    };
+
+    getTopGenres(); // Call the function inside the useEffect
+}, []);
+console.log(topGenres);
   return (
     <LinearGradient colors={["#040306", "#1c0505"]} style={{ flex: 1 }}>
       <ScrollView style={{ marginTop: 50 }}>
