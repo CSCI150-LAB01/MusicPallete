@@ -1,32 +1,36 @@
-import { ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Image, Button } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { Share } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ route }) => {
   const [userProfile, setUserProfile] = useState();
   const [playLists, setPlayLists] = useState([]);
 
-  const getProfile = async () => {
+  const userId = route.params?.userId;
+
+  const getProfile = async (id) => {
     const accessToken = await AsyncStorage.getItem("token");
     try {
-      const response = await fetch("https://api.spotify.com/v1/me", {
+      const url = id ? `https://api.spotify.com/v1/users/${id}` : "https://api.spotify.com/v1/me";
+      const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer  ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       const data = await response.json();
       setUserProfile(data);
-      return data;
     } catch (err) {
       console.log(err.message);
     }
   };
 
   useEffect(() => {
-    getProfile();
-  }, []);
+    getProfile(userId);
+  }, [userId]);
 
   useEffect(() => {
     const getPlaylists = async () => {
@@ -35,7 +39,7 @@ const ProfileScreen = () => {
         const response = await axios.get(
           "https://api.spotify.com/v1/me/playlists", {
             headers: {
-              Authorization: `Bearer  ${accessToken}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
@@ -44,8 +48,21 @@ const ProfileScreen = () => {
         console.log(err.message);
       }
     };
-    getPlaylists();
-  }, []);
+    if (!userId) {
+      getPlaylists();
+    }
+  }, [userId]);
+
+  const shareProfileLink = async () => {
+    const uniqueLink = `musicpalette://profile/${userProfile?.id}`;
+    try {
+      await Share.share({
+        message: `${uniqueLink}`,
+      });
+    } catch (error) {
+      console.error('Error sharing profile link:', error);
+    }
+  };
 
   return (
     <LinearGradient colors={["#040306", "#1c0505"]} style={{ flex: 1 }}>
@@ -58,12 +75,30 @@ const ProfileScreen = () => {
               borderRadius: 20,
               resizeMode: "cover",
             }}
-            source={{ uri: userProfile?.images[0].url }} />
+            source={{ uri: userProfile?.images[0]?.url }} />
           <View>
             <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>{userProfile?.display_name}</Text>
             <Text style={{ color: "gray", fontSize: 16, fontWeight: "bold" }}>{userProfile?.email}</Text>
           </View>
         </View>
+        
+        {/* QR Code */}
+        {userProfile && (
+          <View style={styles.qrCodeContainer}>
+            <QRCode
+              value={`musicpalette://profile/${userProfile.id}`}
+              size={200}
+              color="black"
+              backgroundColor="white"
+            />
+          </View>
+        )}
+
+        {/* Button to Share Profile Link */}
+        <View style={styles.shareButtonContainer}>
+          <Button title="Share My Profile" onPress={shareProfileLink} color="#ff1900" />
+        </View>
+
         <Text style={{ color: "white", fontSize: 20, fontWeight: "500", marginHorizontal: 12 }}>Your Playlists</Text>
         <View style={{ padding: 15 }}>
           {playLists.map((item, index) => (
@@ -88,6 +123,15 @@ const ProfileScreen = () => {
   );
 }
 
-export default ProfileScreen;
-
-const styles = StyleSheet.create({});
+export default ProfileScreen
+const styles = StyleSheet.create({
+  shareButtonContainer: {
+    margin: 20,
+    // Additional styles for the share button container can be added
+  },
+  qrCodeContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+    // Additional styles for the QR code container can be added
+  },
+});

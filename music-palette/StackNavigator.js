@@ -48,7 +48,7 @@ function BottomTabs() {
                 }}
             />
             <Tab.Screen name="Profile" component={ProfileScreen} options={{
-                tabBarLabel: "Home",
+                tabBarLabel: "Profile",
                 headerShown: false,
                 tabBarLabelStyle: { color: "white" },
                 tabBarIcon: ({ focused }) =>
@@ -66,16 +66,40 @@ function BottomTabs() {
 
 const Stack = createNativeStackNavigator();
 function Navigation() {
+    const linking = {
+      prefixes: ['musicpalette://'],
+      config: {
+        screens: {
+          Login: 'login',
+          Main: {
+            screens: {
+              Home: 'home',
+              Profile: {
+                path: 'profile/:userId', // Define the deep link path
+                parse: {
+                  userId: (userId) => `${userId}`, // Ensure userId is treated as a string
+                },
+              },
+              // Add other tabs here if necessary
+            },
+          },
+          Liked: 'liked',
+          Info: 'info',
+          // Add other stack screens here if necessary
+        },
+      },
+    };
+  
     return (
-        <NavigationContainer>
-            <Stack.Navigator>
-                <Stack.Screen name="Login" component={LoginScreen} options= {{ headerShown: false }} />
-                <Stack.Screen name="Main" component={BottomTabs} options= {{ headerShown: false }} />
-                <Stack.Screen name = "Liked" component={LikedSongsScreen} options = {{headerShown: false}} />
-                <Stack.Screen name = "Info" component={SongInfoScreen} options = {{headerShown: false}} />
-            </Stack.Navigator>
-        </NavigationContainer>
-    )
-}
+      <NavigationContainer linking={linking}>
+        <Stack.Navigator>
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Main" component={BottomTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="Liked" component={LikedSongsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Info" component={SongInfoScreen} options={{ headerShown: false }} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
 
 export default Navigation

@@ -74,7 +74,7 @@ const LoginScreen = () => {
                         marginTop: 40
                     }}
                 >
-                    Music Pallete
+                    Music Palette
                 </Text>
 
                 <View style={{ height: 80 }} />
