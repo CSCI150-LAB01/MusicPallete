@@ -15,13 +15,6 @@ const HomeScreen = () => {
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [topArtists, setTopArtists] = useState([]);
   const [topGenres, setTopGenres] = useState([]);
-  const [currentTrackId, setCurrentTrackId] = useState(null);
-  const [listeningTimes, setListeningTimes] = useState({
-    daily: 0,
-    weekly: 0,
-    monthly: 0,
-    yearly: 0
-  });
   const greetingMessage = () => {
     const currentTime = new Date().getHours();
 
@@ -127,262 +120,36 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const getTopGenres = async () => {
-      const accessToken = await AsyncStorage.getItem("token");
-
-      // Fetch top artists
-      const response = await axios({
-        method: "GET",
-        url: "https://api.spotify.com/v1/me/top/artists?limit=20",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const artists = response.data.items;
-
-      // Extract and aggregate genres
-      let genreCounts = {};
-      artists.forEach(artist => {
-        artist.genres.forEach(genre => {
-          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        const accessToken = await AsyncStorage.getItem("token");
+        
+        // Fetch top artists
+        const response = await axios({
+            method: "GET",
+            url: "https://api.spotify.com/v1/me/top/artists?limit=20",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
         });
-      });
 
-      // Convert genreCounts object to array and sort by count
-      const genresSorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).map(entry => entry[0]);
+        const artists = response.data.items;
 
-      setTopGenres(genresSorted);
+        // Extract and aggregate genres
+        let genreCounts = {};
+        artists.forEach(artist => {
+            artist.genres.forEach(genre => {
+                genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+            });
+        });
+
+        // Convert genreCounts object to array and sort by count
+        const genresSorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).map(entry => entry[0]);
+
+        setTopGenres(genresSorted);
     };
 
     getTopGenres(); // Call the function inside the useEffect
-  }, []);
-  console.log(topGenres);
-
-  const calculateDailyListeningTime = async () => {
-    const accessToken = await AsyncStorage.getItem("token");
-  
-    const fetchTracks = async (url) => {
-      try {
-        const response = await axios({
-          method: "GET",
-          url: url,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        return response.data;
-      } catch (err) {
-        console.log("Error fetching data:", err.message);
-        return { items: [], next: null };
-      }
-    };
-  
-    const now = new Date();
-    const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert offset to milliseconds
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfDayUTC = new Date(startOfDay.getTime() - timezoneOffset);
-  
-    let url = "https://api.spotify.com/v1/me/player/recently-played?limit=50";
-    let allTracks = [];
-  
-    while (url) {
-      const data = await fetchTracks(url);
-      const newTracks = data.items.filter(track => {
-        const trackTimeUTC = new Date(track.played_at).getTime();
-        return trackTimeUTC > startOfDayUTC.getTime();
-      });
-  
-      allTracks = allTracks.concat(newTracks);
-      if (newTracks.length < 50) break; // Break if we received less than 50 tracks
-      url = data.next;
-    }
-  
-    console.log("Tracks played today:");
-    allTracks.forEach(track => {
-      const trackTimeLocal = new Date(new Date(track.played_at).getTime() - timezoneOffset);
-      console.log("Played at:", trackTimeLocal, "Duration:", track.track.duration_ms / 60000);
-    });
-  
-    const todaysListeningTime = allTracks.reduce((sum, track) => sum + track.track.duration_ms, 0) / 60000;
-    const roundedTime = Math.round(todaysListeningTime);
-    console.log("Total calculated time:", roundedTime);
-  
-    setListeningTimes(prevState => ({
-      ...prevState,
-      daily: roundedTime
-    }));
-  };
-  
-  useEffect(() => {
-    calculateDailyListeningTime();
-  }, []);
-  
-  const calculateWeeklyListeningTime = async () => {
-    const accessToken = await AsyncStorage.getItem("token");
-  
-    const fetchTracks = async (url) => {
-      try {
-        const response = await axios({
-          method: "GET",
-          url: url,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        return response.data;
-      } catch (err) {
-        console.log("Error fetching data:", err.message);
-        return { items: [], next: null };
-      }
-    };
-  
-    const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert offset to milliseconds
-  const startOfWeek = new Date(new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).getTime() - timezoneOffset);
-
-  let url = "https://api.spotify.com/v1/me/player/recently-played?limit=50";
-  let allTracks = [];
-
-  while (url) {
-    const data = await fetchTracks(url);
-    const newTracks = data.items.filter(track => {
-      const trackTimeUTC = new Date(track.played_at).getTime();
-      const trackTimeLocal = new Date(trackTimeUTC - timezoneOffset);
-      return trackTimeLocal >= startOfWeek;
-    });
-
-    allTracks = allTracks.concat(newTracks);
-    if (newTracks.length < 50) break; // Break if we received less than 50 tracks
-    url = data.next;
-  }
-    // Now allTracks contains all the tracks played this week
-    console.log("Tracks played this week:");
-    allTracks.forEach(track => {
-      console.log("Played at:", track.played_at, "Duration:", track.track.duration_ms / 60000);
-    });
-  
-    const weeklyListeningTime = allTracks.reduce((sum, track) => sum + track.track.duration_ms, 0) / 60000;
-    const roundedTime = Math.round(weeklyListeningTime);
-    console.log("Total calculated time for the week:", roundedTime);
-  
-    setListeningTimes(prevState => ({
-      ...prevState,
-      weekly: roundedTime
-    }));
-  };
-  
-  useEffect(() => {
-    calculateWeeklyListeningTime();
-  }, []);
-
-  const calculateMonthlyListeningTime = async () => {
-    const accessToken = await AsyncStorage.getItem("token");
-  
-    const fetchTracks = async (url) => {
-      try {
-        const response = await axios({
-          method: "GET",
-          url: url,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        return response.data;
-      } catch (err) {
-        console.log("Error fetching data:", err.message);
-        return { items: [], next: null };
-      }
-    };
-  
-    const now = new Date();
-    const timezoneOffset = now.getTimezoneOffset() * 60000;
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfMonthUTC = new Date(startOfMonth.getTime() - timezoneOffset);
-  
-    let url = "https://api.spotify.com/v1/me/player/recently-played?limit=50";
-    let allTracks = [];
-  
-    while (url) {
-      const data = await fetchTracks(url);
-      const newTracks = data.items.filter(track => {
-        const trackTimeUTC = new Date(track.played_at).getTime();
-        return trackTimeUTC >= startOfMonthUTC.getTime();
-      });
-  
-      allTracks = allTracks.concat(newTracks);
-      if (newTracks.length < 50) break; // Break if we received less than 50 tracks
-      url = data.next;
-    }
-  
-    // Calculate the total listening time for the month
-    const monthlyListeningTime = allTracks.reduce((sum, track) => sum + track.track.duration_ms, 0) / 60000;
-    const roundedTime = Math.round(monthlyListeningTime);
-    console.log("Total calculated time for the month:", roundedTime);
-  
-    setListeningTimes(prevState => ({
-      ...prevState,
-      monthly: roundedTime
-    }));
-  };
-  
-  useEffect(() => {
-    calculateMonthlyListeningTime();
-  }, []);
-
-  const calculateYearlyListeningTime = async () => {
-    const accessToken = await AsyncStorage.getItem("token");
-  
-    const fetchTracks = async (url) => {
-      try {
-        const response = await axios({
-          method: "GET",
-          url: url,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        return response.data;
-      } catch (err) {
-        console.log("Error fetching data:", err.message);
-        return { items: [], next: null };
-      }
-    };
-  
-    const now = new Date();
-    const timezoneOffset = now.getTimezoneOffset() * 60000;
-    const startOfYear = new Date(now.getFullYear(), 0, 1); // January 1st of current year
-    const startOfYearUTC = new Date(startOfYear.getTime() - timezoneOffset);
-  
-    let url = "https://api.spotify.com/v1/me/player/recently-played?limit=50";
-    let allTracks = [];
-  
-    while (url) {
-      const data = await fetchTracks(url);
-      const newTracks = data.items.filter(track => {
-        const trackTimeUTC = new Date(track.played_at).getTime();
-        return trackTimeUTC >= startOfYearUTC.getTime();
-      });
-  
-      allTracks = allTracks.concat(newTracks);
-      if (newTracks.length < 50) break; // Break if we received less than 50 tracks
-      url = data.next;
-    }
-  
-    // Calculate the total listening time for the year
-    const yearlyListeningTime = allTracks.reduce((sum, track) => sum + track.track.duration_ms, 0) / 60000;
-    const roundedTime = Math.round(yearlyListeningTime);
-    console.log("Total calculated time for the year:", roundedTime);
-  
-    setListeningTimes(prevState => ({
-      ...prevState,
-      yearly: roundedTime
-    }));
-  };
-  
-  useEffect(() => {
-    calculateYearlyListeningTime();
-  }, []);  
-
+}, []);
+console.log(topGenres);
   return (
     <LinearGradient colors={["#040306", "#1c0505"]} style={{ flex: 1 }}>
       <ScrollView style={{ marginTop: 50 }}>
@@ -416,7 +183,7 @@ const HomeScreen = () => {
 
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Pressable
-            onPress={() => navigation.navigate("Liked")}
+          onPress={() => navigation.navigate("Liked")}
             style={{
               marginBottom: 10,
               flexDirection: "row",
@@ -475,12 +242,12 @@ const HomeScreen = () => {
 
         <View style={{ height: 10 }} />
         <Text style={{ color: "white", fontSize: 19, fontWeight: "bold", marginHorizontal: 10, marginTop: 10 }}>Recently Played</Text>
-        <FlatList
+        <FlatList 
           data={recentlyPlayed}
           horizontal
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator = {false}
           renderItem={({ item, index }) => (
-            <RecentlyPlayedCard item={item} key={index} />
+          <RecentlyPlayedCard item={item} key={index} />
           )}
         />
       </ScrollView>

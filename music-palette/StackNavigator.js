@@ -6,9 +6,17 @@ import ProfileScreen from "./screens/ProfileScreen";
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
-import LoginScreen from "./screens/LoginScreen";
 import LikedSongsScreen from "./screens/LikedSongsScreen";
 import SongInfoScreen from "./screens/SongInfoScreen";
+import LoadingScreen  from "./screens/LoadingScreen";
+import Login from "./screens/LoginScreen";
+import Profile from "./screens/Profile-Opening"
+import Daily from "./screens/daily"
+import Monthly from "./screens/monthly";
+import Yearly from "./screens/newyearly";
+import Weekly from "./screens/newweekly";
+import Sharing from "./screens/sharing";
+import Sharingpage from "./screens/sharingpage";
 
 const Tab = createBottomTabNavigator();
 
@@ -48,7 +56,7 @@ function BottomTabs() {
                 }}
             />
             <Tab.Screen name="Profile" component={ProfileScreen} options={{
-                tabBarLabel: "Profile",
+                tabBarLabel: "Home",
                 headerShown: false,
                 tabBarLabelStyle: { color: "white" },
                 tabBarIcon: ({ focused }) =>
@@ -63,43 +71,26 @@ function BottomTabs() {
     )
 }
 
-
 const Stack = createNativeStackNavigator();
 function Navigation() {
-    const linking = {
-      prefixes: ['musicpalette://'],
-      config: {
-        screens: {
-          Login: 'login',
-          Main: {
-            screens: {
-              Home: 'home',
-              Profile: {
-                path: 'profile/:userId', // Define the deep link path
-                parse: {
-                  userId: (userId) => `${userId}`, // Ensure userId is treated as a string
-                },
-              },
-              // Add other tabs here if necessary
-            },
-          },
-          Liked: 'liked',
-          Info: 'info',
-          // Add other stack screens here if necessary
-        },
-      },
-    };
-  
     return (
-      <NavigationContainer linking={linking}>
-        <Stack.Navigator>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Main" component={BottomTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="Liked" component={LikedSongsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Info" component={SongInfoScreen} options={{ headerShown: false }} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
-  }
+        <NavigationContainer>
+            <Stack.Navigator>
+            <Stack.Screen name="Loading" component={LoadingScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="Login" component={Login} options= {{ headerShown: false }} />
+                <Stack.Screen name = "Profile" component = {Profile} options = {{headerShown: false}}/>
+                <Stack.Screen name = "Daily" component = {Daily} options = {{headerShown: false}}/>
+                <Stack.Screen name = "Weekly" component = {Weekly} options = {{headerShown: false}}/>
+                <Stack.Screen name = "Monthly" component = {Monthly} options = {{headerShown: false}}/>
+                <Stack.Screen name = "Yearly" component={Yearly} options = {{headerShown:false}}/>
+                <Stack.Screen name= "Main" component={BottomTabs} options= {{ headerShown: false }} />
+                <Stack.Screen name = "Liked" component={LikedSongsScreen} options = {{headerShown: false}} />
+                <Stack.Screen name = "Info" component={SongInfoScreen} options = {{headerShown: false}} />
+                <Stack.Screen name = "Sharing" component={Sharing} options = {{headerShown: false}} />
+                <Stack.Screen name = "Sharingpage" component={Sharingpage} options = {{headerShown: false}} />
+            </Stack.Navigator>
+        </NavigationContainer>
+    )
+}
 
 export default Navigation

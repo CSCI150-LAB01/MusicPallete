@@ -27,7 +27,17 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>musicpalette</string>
+          <string>com.musicpalette</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleURLName</key>
+        <string>OAuthRedirect</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.musicpalette</string>
         </array>
       </dict>
     </array>
